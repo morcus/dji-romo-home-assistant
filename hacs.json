@@ -5,9 +5,12 @@
   "domains": [
     "vacuum",
     "sensor",
+    "binary_sensor",
     "button",
     "select",
-    "number"
+    "number",
+    "image",
+    "event"
   ],
   "homeassistant": "2025.1.0",
   "render_readme": true
