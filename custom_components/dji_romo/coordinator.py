@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+from collections.abc import Callable
 from contextlib import suppress
 from dataclasses import dataclass, field, replace
 from datetime import UTC, datetime, timedelta
@@ -228,6 +229,10 @@ class DjiRomoCoordinator(DataUpdateCoordinator[RomoSnapshot]):
         self._mqtt_recovering = False
         # Consecutive REST refresh failures; entities go unavailable past the limit.
         self._cloud_refresh_failures = 0
+        # Serializes settings writes so two switches sharing one nested object
+        # (e.g. add_cleaner_auto) can't clobber each other: the param is built
+        # under this lock, after the previous write's optimistic patch landed.
+        self._settings_write_lock = asyncio.Lock()
         self._availability_unsub: CALLBACK_TYPE | None = None
         self._pending_activity: str | None = None
         self._pending_activity_count = 0
@@ -784,29 +789,38 @@ class DjiRomoCoordinator(DataUpdateCoordinator[RomoSnapshot]):
         )
         self.async_set_updated_data(replace(self.data) if self.data else RomoSnapshot())
 
-    async def async_set_device_setting(self, param: dict[str, Any]) -> None:
+    async def async_set_device_setting(
+        self, build_param: Callable[[], dict[str, Any]]
+    ) -> None:
         """Write device settings (PUT settings) and reflect them locally.
+
+        ``build_param`` constructs the ``param`` body from the current snapshot; it
+        is called *inside* the write lock (and after the previous write's optimistic
+        patch) so two switches sharing one nested object (e.g. add_cleaner_auto)
+        merge correctly instead of clobbering each other under concurrent toggles.
 
         Settings are REST-only (never in MQTT) and cached for STATIC_REFRESH_INTERVAL,
         so after a successful write we patch the cached + live settings optimistically
         (the entity flips immediately) and keep the static cache in sync so the next
         poll does not revert the value before the cloud reports it back.
         """
-        try:
-            await self.api.async_set_settings(param)
-        except DjiRomoAuthError as err:
-            self._async_create_auth_repair_issue(str(err))
-            raise UpdateFailed(f"Failed to write DJI Romo setting: {err}") from err
-        except DjiRomoApiError as err:
-            raise UpdateFailed(f"Failed to write DJI Romo setting: {err}") from err
+        async with self._settings_write_lock:
+            param = build_param()
+            try:
+                await self.api.async_set_settings(param)
+            except DjiRomoAuthError as err:
+                self._async_create_auth_repair_issue(str(err))
+                raise UpdateFailed(f"Failed to write DJI Romo setting: {err}") from err
+            except DjiRomoApiError as err:
+                raise UpdateFailed(f"Failed to write DJI Romo setting: {err}") from err
 
-        if self.data is None:
-            return
-        settings = {**self.data.cloud_data.get("settings", {}), **param}
-        if self._static_cache is not None:
-            self._static_cache["settings"] = settings
-        new_cloud = {**self.data.cloud_data, "settings": settings}
-        self.async_set_updated_data(replace(self.data, cloud_data=new_cloud))
+            if self.data is None:
+                return
+            settings = {**self.data.cloud_data.get("settings", {}), **param}
+            if self._static_cache is not None:
+                self._static_cache["settings"] = settings
+            new_cloud = {**self.data.cloud_data, "settings": settings}
+            self.async_set_updated_data(replace(self.data, cloud_data=new_cloud))
 
     async def async_run_dock_action(self, action: str) -> None:
         """Run a dock action and surface auth failures."""

@@ -137,17 +137,11 @@
       "last_clean_end": {
         "name": "Last Clean End"
       },
-      "device_volume": {
-        "name": "Device Volume"
-      },
       "device_language": {
         "name": "Device Language"
       },
       "auto_dust_collect": {
         "name": "Auto Dust Collect"
-      },
-      "auto_drying": {
-        "name": "Auto Drying"
       },
       "current_room": {
         "name": "Current Cleaning Room"
@@ -226,17 +220,8 @@
       "dust_bag_uv": {
         "name": "Dust Bag UV Lamp"
       },
-      "auto_dust_box_drying": {
-        "name": "Auto Dust Box Drying"
-      },
-      "carpet_detection": {
-        "name": "Carpet Detection"
-      },
       "pet_care": {
         "name": "Pet Care"
-      },
-      "ai_obstacle_recognition": {
-        "name": "AI Obstacle Recognition"
       },
       "auto_mop_wash": {
         "name": "Auto Mop Wash"
@@ -266,11 +251,32 @@
       },
       "room_clean_speed": {
         "name": "Room Mopping Speed"
+      },
+      "drying_mode": {
+        "name": "Drying Duration"
+      },
+      "cleaning_frequency": {
+        "name": "Cleaning Frequency"
+      },
+      "liquid_response": {
+        "name": "Liquid Response"
+      },
+      "obstacle_handling": {
+        "name": "Obstacle Handling"
+      },
+      "low_clearance_mode": {
+        "name": "Low Clearance Cleaning"
+      },
+      "carpet_behavior": {
+        "name": "Carpet Behavior"
       }
     },
     "number": {
       "room_clean_num": {
         "name": "Room Cleaning Passes"
+      },
+      "device_volume": {
+        "name": "Volume"
       }
     },
     "switch": {
@@ -292,8 +298,23 @@
       "auto_add_cleaner": {
         "name": "Auto Add Cleaner"
       },
+      "sewage_tank_deodorizer": {
+        "name": "Sewage Tank Deodorizer"
+      },
       "enhanced_particle_cleaning": {
         "name": "Enhanced Particle Cleaning"
+      },
+      "auto_dust_box_drying": {
+        "name": "Auto Dust Box Drying"
+      },
+      "auto_drying": {
+        "name": "Auto Drying"
+      },
+      "kitchen_bathroom_wet_wash": {
+        "name": "Kitchen & Bathroom Wet Wash"
+      },
+      "ai_obstacle_recognition": {
+        "name": "AI Obstacle Recognition"
       }
     },
     "button": {

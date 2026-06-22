@@ -484,13 +484,7 @@ SENSORS: tuple[DjiRomoSensorDescription, ...] = (
         icon="mdi:timer-sand",
         value_fn=lambda coordinator: _drying_remaining_minutes(coordinator),
     ),
-    DjiRomoSensorDescription(
-        key="device_volume",
-        name="Device Volume",
-        native_unit_of_measurement=PERCENTAGE,
-        entity_category=EntityCategory.DIAGNOSTIC,
-        value_fn=lambda coordinator: _cloud_path(coordinator, "settings.device_volume"),
-    ),
+    # Device volume is now a writable number (see number.py).
     DjiRomoSensorDescription(
         key="device_language",
         name="Device Language",
@@ -509,15 +503,7 @@ SENSORS: tuple[DjiRomoSensorDescription, ...] = (
         )
         or {},
     ),
-    DjiRomoSensorDescription(
-        key="auto_drying",
-        name="Auto Drying",
-        entity_category=EntityCategory.DIAGNOSTIC,
-        value_fn=lambda coordinator: _cloud_path(
-            coordinator, "settings.drying.auto_enable"
-        ),
-        attrs_fn=lambda coordinator: _cloud_path(coordinator, "settings.drying") or {},
-    ),
+    # Auto drying is now a writable switch (see switch.py).
     # Hot water mopping is now a writable switch (see switch.py).
     # Auto add cleaner is now a writable switch (see switch.py).
 )

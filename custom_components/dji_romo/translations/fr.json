@@ -137,17 +137,11 @@
       "last_clean_end": {
         "name": "Fin du dernier nettoyage"
       },
-      "device_volume": {
-        "name": "Volume de l'appareil"
-      },
       "device_language": {
         "name": "Langue de l'appareil"
       },
       "auto_dust_collect": {
         "name": "Aspiration auto des poussières"
-      },
-      "auto_drying": {
-        "name": "Séchage automatique"
       },
       "current_room": {
         "name": "Pièce en cours de nettoyage"
@@ -226,17 +220,8 @@
       "dust_bag_uv": {
         "name": "Lampe UV du sac"
       },
-      "auto_dust_box_drying": {
-        "name": "Séchage auto du bac à poussière"
-      },
-      "carpet_detection": {
-        "name": "Détection de tapis"
-      },
       "pet_care": {
         "name": "Mode animaux"
-      },
-      "ai_obstacle_recognition": {
-        "name": "Reconnaissance d'obstacles IA"
       },
       "auto_mop_wash": {
         "name": "Lavage auto serpillière"
@@ -266,11 +251,32 @@
       },
       "room_clean_speed": {
         "name": "Vitesse de serpillière des pièces"
+      },
+      "drying_mode": {
+        "name": "Durée de séchage"
+      },
+      "cleaning_frequency": {
+        "name": "Fréquence de nettoyage"
+      },
+      "liquid_response": {
+        "name": "Réponse liquide"
+      },
+      "obstacle_handling": {
+        "name": "Gestion des obstacles"
+      },
+      "low_clearance_mode": {
+        "name": "Mode de nettoyage à faible dégagement"
+      },
+      "carpet_behavior": {
+        "name": "Comportement sur tapis"
       }
     },
     "number": {
       "room_clean_num": {
         "name": "Passages de nettoyage des pièces"
+      },
+      "device_volume": {
+        "name": "Volume"
       }
     },
     "switch": {
@@ -292,8 +298,23 @@
       "auto_add_cleaner": {
         "name": "Ajout auto de solution"
       },
+      "sewage_tank_deodorizer": {
+        "name": "Désodorisant bac eaux usées"
+      },
       "enhanced_particle_cleaning": {
         "name": "Nettoyage renforcé particules"
+      },
+      "auto_dust_box_drying": {
+        "name": "Séchage auto du bac à poussière"
+      },
+      "auto_drying": {
+        "name": "Séchage automatique"
+      },
+      "kitchen_bathroom_wet_wash": {
+        "name": "Lavage humide cuisine et toilettes"
+      },
+      "ai_obstacle_recognition": {
+        "name": "Contournement intelligent des obstacles"
       }
     },
     "button": {

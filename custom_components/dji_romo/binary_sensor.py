@@ -83,17 +83,7 @@ BINARY_SENSORS: tuple[DjiRomoBinarySensorDescription, ...] = (
         value_fn=lambda coordinator: bool(coordinator.data.hms_alerts)
         or coordinator.data.activity == "error",
     ),
-    DjiRomoBinarySensorDescription(
-        key="auto_dust_box_drying",
-        name="Auto Dust Box Drying",
-        entity_category=EntityCategory.DIAGNOSTIC,
-        # The app setting that enables post-clean dust box drying + UV sterilization.
-        # This mirrors the on/off setting, NOT the live drying activity (see the
-        # "Drying Status" sensor for that), so no RUNNING device class.
-        value_fn=lambda coordinator: _truthy(
-            _setting(coordinator, "drying", "dust_box_drying")
-        ),
-    ),
+    # Auto dust box drying is now a writable switch (see switch.py).
     DjiRomoBinarySensorDescription(
         key="dust_bag_uv",
         name="Dust Bag UV Lamp",
@@ -104,27 +94,16 @@ BINARY_SENSORS: tuple[DjiRomoBinarySensorDescription, ...] = (
     ),
     # Battery care, child lock and Do-Not-Disturb are now writable switches
     # (see switch.py), no longer read-only sensors.
+    # Carpet behavior is now a multi-level select (see select.py); the old
+    # boolean mirror was lossy (meet_carpet_mode is an enum, not on/off).
     # --- Read-only mirrors of the app's on/off settings (controls TBD) ---
-    DjiRomoBinarySensorDescription(
-        key="carpet_detection",
-        name="Carpet Detection",
-        entity_category=EntityCategory.DIAGNOSTIC,
-        value_fn=lambda coordinator: _truthy(_setting(coordinator, "meet_carpet_mode")),
-    ),
     DjiRomoBinarySensorDescription(
         key="pet_care",
         name="Pet Care",
         entity_category=EntityCategory.DIAGNOSTIC,
         value_fn=lambda coordinator: _truthy(_setting(coordinator, "is_pet_care")),
     ),
-    DjiRomoBinarySensorDescription(
-        key="ai_obstacle_recognition",
-        name="AI Obstacle Recognition",
-        entity_category=EntityCategory.DIAGNOSTIC,
-        value_fn=lambda coordinator: _truthy(
-            _setting(coordinator, "ai_recognition", "is_open")
-        ),
-    ),
+    # AI obstacle recognition is now a writable switch (see switch.py).
     DjiRomoBinarySensorDescription(
         key="auto_mop_wash",
         name="Auto Mop Wash",

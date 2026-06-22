@@ -161,6 +161,26 @@ SWITCHES: tuple[DjiRomoSwitchDescription, ...] = (
         },
     ),
     DjiRomoSwitchDescription(
+        key="sewage_tank_deodorizer",
+        translation_key="sewage_tank_deodorizer",
+        name="Sewage Tank Deodorizer",
+        icon="mdi:scent",
+        entity_category=EntityCategory.CONFIG,
+        # Sibling of is_add_in_mop inside add_cleaner_auto. The key/container are
+        # confirmed (seen in the auto-add-cleaner capture), but the ON value (1) is
+        # inferred, not MITM-confirmed: the app hides this toggle on this device, so
+        # it was never observed being set. Writes may be rejected if unsupported.
+        value_fn=lambda coordinator: _truthy(
+            _setting(coordinator, "add_cleaner_auto", "sewage_tank_deodorizer")
+        ),
+        param_fn=lambda coordinator, on: {
+            "add_cleaner_auto": {
+                **(_setting(coordinator, "add_cleaner_auto") or {}),
+                "sewage_tank_deodorizer": 1 if on else 0,
+            }
+        },
+    ),
+    DjiRomoSwitchDescription(
         key="enhanced_particle_cleaning",
         translation_key="enhanced_particle_cleaning",
         name="Enhanced Particle Cleaning",
@@ -172,6 +192,83 @@ SWITCHES: tuple[DjiRomoSwitchDescription, ...] = (
         ),
         param_fn=lambda coordinator, on: {
             "enhance_particle_clean": 1 if on else 0
+        },
+    ),
+    DjiRomoSwitchDescription(
+        key="auto_dust_box_drying",
+        translation_key="auto_dust_box_drying",
+        name="Auto Dust Box Drying",
+        icon="mdi:fan",
+        entity_category=EntityCategory.CONFIG,
+        # Nested setting: the app sends the whole drying object, so we preserve the
+        # siblings (mode, auto_enable) and only flip dust_box_drying. This is the
+        # on/off setting, not the live drying activity (see the Drying Status
+        # sensor). Captured via MITM 2026-06-22.
+        value_fn=lambda coordinator: _truthy(
+            _setting(coordinator, "drying", "dust_box_drying")
+        ),
+        param_fn=lambda coordinator, on: {
+            "drying": {
+                **(_setting(coordinator, "drying") or {}),
+                "dust_box_drying": 1 if on else 0,
+            }
+        },
+    ),
+    DjiRomoSwitchDescription(
+        key="auto_drying",
+        translation_key="auto_drying",
+        name="Auto Drying",
+        icon="mdi:fan-auto",
+        entity_category=EntityCategory.CONFIG,
+        # Nested setting in the same drying object as auto_dust_box_drying; the
+        # write lock keeps the two from clobbering. Preserves siblings (mode,
+        # dust_box_drying), flips auto_enable. Captured via MITM 2026-06-22.
+        value_fn=lambda coordinator: _truthy(
+            _setting(coordinator, "drying", "auto_enable")
+        ),
+        param_fn=lambda coordinator, on: {
+            "drying": {
+                **(_setting(coordinator, "drying") or {}),
+                "auto_enable": 1 if on else 0,
+            }
+        },
+    ),
+    DjiRomoSwitchDescription(
+        key="kitchen_bathroom_wet_wash",
+        translation_key="kitchen_bathroom_wet_wash",
+        name="Kitchen & Bathroom Wet Wash",
+        icon="mdi:water-plus",
+        entity_category=EntityCategory.CONFIG,
+        # Nested in the wash_back object (shared with the cleaning_frequency select;
+        # the write lock keeps them from clobbering). Preserves wash_back_area, flips
+        # distinguish_room. Captured via MITM 2026-06-22.
+        value_fn=lambda coordinator: _truthy(
+            _setting(coordinator, "wash_back", "distinguish_room")
+        ),
+        param_fn=lambda coordinator, on: {
+            "wash_back": {
+                **(_setting(coordinator, "wash_back") or {}),
+                "distinguish_room": 1 if on else 0,
+            }
+        },
+    ),
+    DjiRomoSwitchDescription(
+        key="ai_obstacle_recognition",
+        translation_key="ai_obstacle_recognition",
+        name="AI Obstacle Recognition",
+        icon="mdi:eye-check",
+        entity_category=EntityCategory.CONFIG,
+        # Master toggle of the ai_recognition object (shared with the liquid_response,
+        # obstacle_mode and low_clearance selects; the write lock keeps them from
+        # clobbering). Preserves siblings, flips is_open. Captured via MITM 2026-06-22.
+        value_fn=lambda coordinator: _truthy(
+            _setting(coordinator, "ai_recognition", "is_open")
+        ),
+        param_fn=lambda coordinator, on: {
+            "ai_recognition": {
+                **(_setting(coordinator, "ai_recognition") or {}),
+                "is_open": 1 if on else 0,
+            }
         },
     ),
 )
@@ -218,8 +315,11 @@ class DjiRomoSettingSwitch(DjiRomoCoordinatorEntity, SwitchEntity):
 
     async def _async_set(self, on: bool) -> None:
         try:
+            # Pass a builder (not a pre-built dict) so the coordinator evaluates it
+            # under its write lock, after any in-flight write's optimistic patch —
+            # this keeps switches sharing one nested object from clobbering.
             await self.coordinator.async_set_device_setting(
-                self.entity_description.param_fn(self.coordinator, on)
+                lambda: self.entity_description.param_fn(self.coordinator, on)
             )
         except UpdateFailed as err:
             raise HomeAssistantError(

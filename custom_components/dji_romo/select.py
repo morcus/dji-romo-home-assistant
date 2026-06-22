@@ -2,12 +2,17 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass
+from typing import Any
 
 from homeassistant.components.select import SelectEntity, SelectEntityDescription
 from homeassistant.config_entries import ConfigEntry
+from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
+from homeassistant.helpers.update_coordinator import UpdateFailed
 
 from .const import (
     CONF_ROOM_CLEAN_MODE,
@@ -74,6 +79,139 @@ SELECTS: tuple[DjiRomoSelectDescription, ...] = (
 )
 
 
+@dataclass(frozen=True, kw_only=True)
+class DjiRomoSettingSelectDescription(SelectEntityDescription):
+    """Describes a device-setting select (writes the REST settings endpoint).
+
+    ``param_fn`` builds the ``param`` body for a chosen value (it gets the
+    coordinator so nested settings can preserve their sibling fields); ``value_fn``
+    reads the current integer value from the coordinator (None when unknown).
+    """
+
+    option_map: dict[str, int]
+    value_fn: Callable[[DjiRomoCoordinator], int | None]
+    param_fn: Callable[[DjiRomoCoordinator, int], dict[str, Any]]
+
+
+def _setting(coordinator: DjiRomoCoordinator, *path: str) -> Any:
+    """Return a value from the REST settings payload by nested key path."""
+    current: Any = coordinator.data.cloud_data.get("settings", {})
+    for part in path:
+        if not isinstance(current, dict):
+            return None
+        current = current.get(part)
+    return current
+
+
+SETTING_SELECTS: tuple[DjiRomoSettingSelectDescription, ...] = (
+    DjiRomoSettingSelectDescription(
+        key="drying_mode",
+        translation_key="drying_mode",
+        name="Drying Duration",
+        icon="mdi:timer-cog",
+        entity_category=EntityCategory.CONFIG,
+        # Nested in the drying object (shared with the auto_drying / dust-box-drying
+        # switches; the coordinator's write lock keeps them from clobbering).
+        # Values captured via MITM 2026-06-22.
+        option_map={"Energy Saving": 0, "Standard": 1, "Strong": 2},
+        value_fn=lambda coordinator: _setting(coordinator, "drying", "mode"),
+        param_fn=lambda coordinator, val: {
+            "drying": {**(_setting(coordinator, "drying") or {}), "mode": val}
+        },
+    ),
+    DjiRomoSettingSelectDescription(
+        key="cleaning_frequency",
+        translation_key="cleaning_frequency",
+        name="Cleaning Frequency",
+        icon="mdi:water-sync",
+        entity_category=EntityCategory.CONFIG,
+        # Mop wash-back frequency (app: "Fréquence de nettoyage"), nested in the
+        # wash_back object; preserves the sibling distinguish_room. Higher frequency
+        # = lower numeric value. Values captured via MITM 2026-06-22.
+        option_map={"Water Saving": 3, "Standard": 2, "High": 1},
+        value_fn=lambda coordinator: _setting(
+            coordinator, "wash_back", "wash_back_area"
+        ),
+        param_fn=lambda coordinator, val: {
+            "wash_back": {
+                **(_setting(coordinator, "wash_back") or {}),
+                "wash_back_area": val,
+            }
+        },
+    ),
+    DjiRomoSettingSelectDescription(
+        key="liquid_response",
+        translation_key="liquid_response",
+        name="Liquid Response",
+        icon="mdi:water-alert",
+        entity_category=EntityCategory.CONFIG,
+        # How the robot reacts to detected liquids, nested in ai_recognition;
+        # preserves the siblings (is_open, obstacle_mode, vertical_obstacle_mode).
+        # Values captured via MITM 2026-06-22.
+        option_map={"Ignore": 0, "Avoid": 1, "Clean": 2},
+        value_fn=lambda coordinator: _setting(
+            coordinator, "ai_recognition", "liquid_avoid"
+        ),
+        param_fn=lambda coordinator, val: {
+            "ai_recognition": {
+                **(_setting(coordinator, "ai_recognition") or {}),
+                "liquid_avoid": val,
+            }
+        },
+    ),
+    DjiRomoSettingSelectDescription(
+        key="obstacle_handling",
+        translation_key="obstacle_handling",
+        name="Obstacle Handling",
+        icon="mdi:traffic-cone",
+        entity_category=EntityCategory.CONFIG,
+        # ai_recognition.obstacle_mode, nested; preserves the siblings. Values
+        # captured via MITM 2026-06-22.
+        option_map={"Avoidance Priority": 2, "Standard": 0, "Cleaning Priority": 1},
+        value_fn=lambda coordinator: _setting(
+            coordinator, "ai_recognition", "obstacle_mode"
+        ),
+        param_fn=lambda coordinator, val: {
+            "ai_recognition": {
+                **(_setting(coordinator, "ai_recognition") or {}),
+                "obstacle_mode": val,
+            }
+        },
+    ),
+    DjiRomoSettingSelectDescription(
+        key="low_clearance_mode",
+        translation_key="low_clearance_mode",
+        name="Low Clearance Cleaning",
+        icon="mdi:table-furniture",
+        entity_category=EntityCategory.CONFIG,
+        # ai_recognition.vertical_obstacle_mode (cleaning under low furniture),
+        # nested; preserves the siblings. Values captured via MITM 2026-06-22.
+        option_map={"Avoid Low Spaces": 2, "Standard": 0, "Max Coverage": 1},
+        value_fn=lambda coordinator: _setting(
+            coordinator, "ai_recognition", "vertical_obstacle_mode"
+        ),
+        param_fn=lambda coordinator, val: {
+            "ai_recognition": {
+                **(_setting(coordinator, "ai_recognition") or {}),
+                "vertical_obstacle_mode": val,
+            }
+        },
+    ),
+    DjiRomoSettingSelectDescription(
+        key="carpet_behavior",
+        translation_key="carpet_behavior",
+        name="Carpet Behavior",
+        icon="mdi:rug",
+        entity_category=EntityCategory.CONFIG,
+        # meet_carpet_mode, flat key (what to do on a newly detected carpet).
+        # Values captured via MITM 2026-06-22.
+        option_map={"Suction Boost": 1, "Cross Carpet": 2, "Avoid Carpet": 3},
+        value_fn=lambda coordinator: _setting(coordinator, "meet_carpet_mode"),
+        param_fn=lambda coordinator, val: {"meet_carpet_mode": val},
+    ),
+)
+
+
 async def async_setup_entry(
     hass: HomeAssistant,
     entry: ConfigEntry,
@@ -81,7 +219,14 @@ async def async_setup_entry(
 ) -> None:
     """Set up Romo select entities."""
     coordinator = entry.runtime_data
-    async_add_entities(DjiRomoRoomOptionSelect(coordinator, description) for description in SELECTS)
+    entities: list[SelectEntity] = [
+        DjiRomoRoomOptionSelect(coordinator, description) for description in SELECTS
+    ]
+    entities.extend(
+        DjiRomoSettingSelect(coordinator, description)
+        for description in SETTING_SELECTS
+    )
+    async_add_entities(entities)
 
 
 class DjiRomoRoomOptionSelect(DjiRomoCoordinatorEntity, SelectEntity):
@@ -115,3 +260,41 @@ class DjiRomoRoomOptionSelect(DjiRomoCoordinatorEntity, SelectEntity):
             self.entity_description.key,
             self.entity_description.option_map[option],
         )
+
+
+class DjiRomoSettingSelect(DjiRomoCoordinatorEntity, SelectEntity):
+    """A device setting exposed as a select (writes the REST settings endpoint)."""
+
+    entity_description: DjiRomoSettingSelectDescription
+
+    def __init__(
+        self,
+        coordinator: DjiRomoCoordinator,
+        description: DjiRomoSettingSelectDescription,
+    ) -> None:
+        super().__init__(coordinator)
+        self.entity_description = description
+        self._attr_unique_id = f"{coordinator.device_sn}_{description.key}"
+        self._attr_options = list(description.option_map)
+
+    @property
+    def current_option(self) -> str | None:
+        """Return the label matching the current setting value (None if unknown)."""
+        value = self.entity_description.value_fn(self.coordinator)
+        for label, option_value in self.entity_description.option_map.items():
+            if option_value == value:
+                return label
+        return None
+
+    async def async_select_option(self, option: str) -> None:
+        """Write the chosen value to the device settings."""
+        value = self.entity_description.option_map[option]
+        try:
+            # Builder evaluated under the coordinator's write lock (see switches).
+            await self.coordinator.async_set_device_setting(
+                lambda: self.entity_description.param_fn(self.coordinator, value)
+            )
+        except UpdateFailed as err:
+            raise HomeAssistantError(
+                f"Failed to set DJI Romo '{self.name}': {err}"
+            ) from err
