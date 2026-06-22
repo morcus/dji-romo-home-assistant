@@ -102,30 +102,8 @@ BINARY_SENSORS: tuple[DjiRomoBinarySensorDescription, ...] = (
         # Live lamp state (osd, ~1 s): only on during the dust box drying cycle.
         value_fn=lambda coordinator: _truthy(coordinator.data.dust_bag_uv_enable),
     ),
-    DjiRomoBinarySensorDescription(
-        key="battery_care",
-        name="Battery Care",
-        entity_category=EntityCategory.DIAGNOSTIC,
-        # Live from the device_osd stream (~1 s).
-        value_fn=lambda coordinator: _truthy(coordinator.data.battery_care_active),
-    ),
-    DjiRomoBinarySensorDescription(
-        key="child_lock",
-        name="Child Lock",
-        entity_category=EntityCategory.DIAGNOSTIC,
-        # Plain flag: on = child lock enabled.
-        value_fn=lambda coordinator: _truthy(
-            _setting(coordinator, "is_child_lock_open")
-        ),
-    ),
-    DjiRomoBinarySensorDescription(
-        key="do_not_disturb",
-        name="Do Not Disturb",
-        entity_category=EntityCategory.DIAGNOSTIC,
-        value_fn=lambda coordinator: _truthy(
-            _setting(coordinator, "no_disturb", "is_open")
-        ),
-    ),
+    # Battery care, child lock and Do-Not-Disturb are now writable switches
+    # (see switch.py), no longer read-only sensors.
     # --- Read-only mirrors of the app's on/off settings (controls TBD) ---
     DjiRomoBinarySensorDescription(
         key="carpet_detection",
@@ -169,14 +147,7 @@ BINARY_SENSORS: tuple[DjiRomoBinarySensorDescription, ...] = (
             _setting(coordinator, "deodorizer_mop", "mode")
         ),
     ),
-    DjiRomoBinarySensorDescription(
-        key="enhanced_particle_cleaning",
-        name="Enhanced Particle Cleaning",
-        entity_category=EntityCategory.DIAGNOSTIC,
-        value_fn=lambda coordinator: _truthy(
-            _setting(coordinator, "enhance_particle_clean")
-        ),
-    ),
+    # Enhanced particle cleaning is now a writable switch (see switch.py).
     DjiRomoBinarySensorDescription(
         key="enhanced_stain_cleaning",
         name="Enhanced Stain Cleaning",

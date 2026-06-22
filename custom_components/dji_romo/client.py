@@ -329,6 +329,23 @@ class DjiRomoApiClient:
         payload = await self._device_request("GET", "settings")
         return payload.get("data", {})
 
+    async def async_set_settings(self, param: dict[str, Any]) -> None:
+        """Write one or more device settings.
+
+        The write endpoint is ``PUT .../devices/{sn}/settings`` and the body the
+        DJI Home app sends wraps the changed keys in a ``param`` object alongside
+        a ``double_check`` flag, e.g. ``{"double_check": false, "param":
+        {"is_child_lock_open": 0}}``. Sending the keys at the top level (without
+        the ``param`` wrapper) is what made every earlier guess return ``121001
+        "Request parameter error"``. ``param`` keys mirror the ``settings`` GET
+        schema, so partial updates are fine — only the keys present are changed.
+        """
+        await self._device_request(
+            "PUT",
+            "settings",
+            json={"double_check": False, "param": param},
+        )
+
     async def async_get_consumables(self) -> list[dict[str, Any]]:
         """Fetch robot consumable status."""
         payload = await self._device_request("GET", "consumables")

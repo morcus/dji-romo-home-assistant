@@ -149,12 +149,6 @@
       "auto_drying": {
         "name": "Auto Drying"
       },
-      "hot_water_mop": {
-        "name": "Hot Water Mopping"
-      },
-      "auto_add_cleaner": {
-        "name": "Auto Add Cleaner"
-      },
       "current_room": {
         "name": "Current Cleaning Room"
       },
@@ -232,15 +226,6 @@
       "dust_bag_uv": {
         "name": "Dust Bag UV Lamp"
       },
-      "battery_care": {
-        "name": "Battery Care"
-      },
-      "child_lock": {
-        "name": "Child Lock"
-      },
-      "do_not_disturb": {
-        "name": "Do Not Disturb"
-      },
       "auto_dust_box_drying": {
         "name": "Auto Dust Box Drying"
       },
@@ -261,9 +246,6 @@
       },
       "mop_deodorizer": {
         "name": "Mop Deodorizer"
-      },
-      "enhanced_particle_cleaning": {
-        "name": "Enhanced Particle Cleaning"
       },
       "enhanced_stain_cleaning": {
         "name": "Enhanced Stain Cleaning"
@@ -289,6 +271,29 @@
     "number": {
       "room_clean_num": {
         "name": "Room Cleaning Passes"
+      }
+    },
+    "switch": {
+      "child_lock": {
+        "name": "Child Lock"
+      },
+      "cliff_detection": {
+        "name": "Cliff Detection"
+      },
+      "battery_care": {
+        "name": "Battery Care"
+      },
+      "do_not_disturb": {
+        "name": "Do Not Disturb"
+      },
+      "hot_water_mop": {
+        "name": "Hot Water Mopping"
+      },
+      "auto_add_cleaner": {
+        "name": "Auto Add Cleaner"
+      },
+      "enhanced_particle_cleaning": {
+        "name": "Enhanced Particle Cleaning"
       }
     },
     "button": {

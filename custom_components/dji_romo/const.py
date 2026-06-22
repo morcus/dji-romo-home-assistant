@@ -83,6 +83,7 @@ PLATFORMS = [
     "button",
     "select",
     "number",
+    "switch",
     "image",
     "event",
 ]

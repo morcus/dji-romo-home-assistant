@@ -518,26 +518,8 @@ SENSORS: tuple[DjiRomoSensorDescription, ...] = (
         ),
         attrs_fn=lambda coordinator: _cloud_path(coordinator, "settings.drying") or {},
     ),
-    DjiRomoSensorDescription(
-        key="hot_water_mop",
-        name="Hot Water Mopping",
-        entity_category=EntityCategory.DIAGNOSTIC,
-        value_fn=lambda coordinator: _cloud_path(
-            coordinator, "settings.wash_mop_with_hot_water"
-        ),
-    ),
-    DjiRomoSensorDescription(
-        key="auto_add_cleaner",
-        name="Auto Add Cleaner",
-        entity_category=EntityCategory.DIAGNOSTIC,
-        value_fn=lambda coordinator: _cloud_path(
-            coordinator, "settings.add_cleaner_auto.is_add_in_mop"
-        ),
-        attrs_fn=lambda coordinator: _cloud_path(
-            coordinator, "settings.add_cleaner_auto"
-        )
-        or {},
-    ),
+    # Hot water mopping is now a writable switch (see switch.py).
+    # Auto add cleaner is now a writable switch (see switch.py).
 )
 
 
