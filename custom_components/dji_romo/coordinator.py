@@ -361,7 +361,7 @@ class DjiRomoCoordinator(DataUpdateCoordinator[RomoSnapshot]):
         if not new_pts:
             return
 
-        # Merge into existing trajectory (cap at TRAJECTORY_MAX_POINTS).
+        # Merge into existing trajectory (cap at TRAJECTORY_MAX_POINTS as a safety net).
         prev = self.data.trajectory
         merged = list(prev[-(TRAJECTORY_MAX_POINTS - len(new_pts)):]) + new_pts
         snapshot = replace(self.data, trajectory=merged)
